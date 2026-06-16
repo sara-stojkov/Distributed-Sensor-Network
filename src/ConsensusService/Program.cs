@@ -10,6 +10,6 @@ builder.Services.AddHostedService<Worker>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-var host = builder.Build();
+var host = builder.Build();       
 host.Run();
 
