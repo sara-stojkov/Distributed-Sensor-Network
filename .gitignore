@@ -59,3 +59,9 @@ docker-compose.override.yml
 appsettings.Development.json
 .env
 secrets.json
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+.vs
