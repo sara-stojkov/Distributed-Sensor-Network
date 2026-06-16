@@ -1,0 +1,32 @@
+services:
+  notificationservice:
+    build:
+      context: ./NotificationService
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"   # host:container - mozes promeniti levu stranu ako ti 8081 nesto blokira
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  # Kad kolege zavrse svoje servise, dodajemo ovde npr.:
+  #
+  # ingestionservice:
+  #   build:
+  #     context: ./IngestionService
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8082:8080"
+  #
+  # consensusservice:
+  #   build:
+  #     context: ./ConsensusService
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8083:8080"
+  #
+  # postgres:
+  #   image: postgres:16
+  #   environment:
+  #     - POSTGRES_PASSWORD=...
+  #   ports:
+  #     - "5432:5432"
