@@ -44,7 +44,7 @@ builder.Services.Configure<ClientRateLimitOptions>(
 builder.Services.Configure<ClientRateLimitPolicies>(
     builder.Configuration.GetSection("ClientRateLimitPolicies"));
 
-builder.Services.AddInMemoryRateLimiting(); // check
+builder.Services.AddInMemoryRateLimiting();
 
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 

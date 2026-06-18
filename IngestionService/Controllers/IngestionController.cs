@@ -34,7 +34,6 @@ namespace IngestionService.Controllers
         [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public async Task<IActionResult> PostReading([FromBody] SecureMessage message)
         {
-            // Check timestamp
             if (!DateTime.TryParse(message.SentAt, out var sentAt))
                 return BadRequest("Invalid SentAt timestamp.");
 
