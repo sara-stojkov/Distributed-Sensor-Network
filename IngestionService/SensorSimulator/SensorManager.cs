@@ -10,6 +10,7 @@ namespace SensorSimulator
         private readonly RSA _serverPublicKey;
         private readonly HttpClient _http;
         private readonly CancellationTokenSource _cts = new();
+        private readonly object _slotLock = new();
         private int _nextSensorIndex = 6;
 
         private const int TargetActiveSensors = 5;
@@ -30,6 +31,7 @@ namespace SensorSimulator
             foreach (var cfg in configs)
             {
                 var sensor = new SensorNode(cfg, _serverPublicKey, _http);
+                sensor.AssignSlot();
                 _allSensors.Add(sensor);
                 _sensorTasks.Add(sensor.RunAsync(_cts.Token));
             }
@@ -51,21 +53,39 @@ namespace SensorSimulator
         {
             while (!_cts.Token.IsCancellationRequested)
             {
-                await Task.Delay(2000, _cts.Token).ContinueWith(_ => { });
+                await Task.Delay(1000, _cts.Token).ContinueWith(_ => { });
 
-                int activeCount = _allSensors.Count(s => s.IsActive);
-
-                if (activeCount < TargetActiveSensors)
+                lock (_slotLock)
                 {
-                    int needed = TargetActiveSensors - activeCount;
+                    int slotsHeld = _allSensors.Count(s => s.HasActiveSlot);
+                    int openSlots = TargetActiveSensors - slotsHeld;
+
+                    if (openSlots <= 0) continue;
+
                     Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine($"\n[WATCHDOG] Active sensors: {activeCount}/{TargetActiveSensors}. Spawning {needed} replacement(s)...");
+                    Console.WriteLine($"\n[WATCHDOG] {slotsHeld}/{TargetActiveSensors} slots filled. Filling {openSlots} open slot(s)...");
                     Console.ResetColor();
 
-                    for (int i = 0; i < needed; i++)
-                        SpawnReplacementSensor();
+                    for (int i = 0; i < openSlots; i++)
+                        FillOneOpenSlot();
                 }
             }
+        }
+
+        private void FillOneOpenSlot()
+        {
+            var reserveSensor = _allSensors.FirstOrDefault(s => !s.HasActiveSlot && s.IsBlockExpired);
+
+            if (reserveSensor != null)
+            {
+                reserveSensor.AssignSlot();
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"[WATCHDOG] {reserveSensor.Id} re-admitted from reserve into the active pool.");
+                Console.ResetColor();
+                return;
+            }
+
+            SpawnReplacementSensor();
         }
 
         private void SpawnReplacementSensor()
@@ -89,11 +109,12 @@ namespace SensorSimulator
                 });
 
             var sensor = new SensorNode(cfg, _serverPublicKey, _http);
+            sensor.AssignSlot();
             _allSensors.Add(sensor);
             _sensorTasks.Add(sensor.RunAsync(_cts.Token));
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[WATCHDOG] Replacement sensor {newId} is now active.");
+            Console.WriteLine($"[WATCHDOG] New replacement sensor {newId} spawned and assigned a slot.");
             Console.ResetColor();
         }
 
@@ -155,23 +176,38 @@ namespace SensorSimulator
                 return;
             }
 
-            sensor.BlockTemporarily();
-            Console.WriteLine($"Sensor {sensorId} blocked for 30s. Watchdog will spawn replacement.");
+            lock (_slotLock)
+            {
+                bool hadSlot = sensor.HasActiveSlot;
+                sensor.BlockTemporarily();
+
+                if (hadSlot)
+                {
+                    sensor.ReleaseSlot();
+                    Console.WriteLine($"Sensor {sensorId} blocked for 30s. Slot released — watchdog will fill it on the next tick.");
+                }
+                else
+                {
+                    Console.WriteLine($"Sensor {sensorId} blocked for 30s (was already in reserve, no slot to release).");
+                }
+            }
         }
 
         private void PrintStatus()
         {
-            Console.WriteLine("\n┌─ Active Sensors ───────────────────────────────┐");
+            Console.WriteLine("\n┌─ Sensor Pool ───────────────────────────────────┐");
             foreach (var s in _allSensors)
             {
-                string status = s.IsActive ? "ACTIVE  " : "BLOCKED ";
-                ConsoleColor c = s.IsActive ? ConsoleColor.Green : ConsoleColor.Red;
+                string status = s.HasActiveSlot ? "ACTIVE (slot)" : (s.IsBlockExpired ? "RESERVE      " : "BLOCKED      ");
+                ConsoleColor c = s.HasActiveSlot ? ConsoleColor.Green
+                               : s.IsBlockExpired ? ConsoleColor.DarkCyan
+                               : ConsoleColor.Red;
                 Console.ForegroundColor = c;
                 Console.WriteLine($"│  {s.Id}  {status}  Q={s.Quality}");
             }
             Console.ResetColor();
-            int active = _allSensors.Count(s => s.IsActive);
-            Console.WriteLine($"└─ Total: {active}/{TargetActiveSensors} active ──────────────────────────┘\n");
+            int active = _allSensors.Count(s => s.HasActiveSlot);
+            Console.WriteLine($"└─ Total: {active}/{TargetActiveSensors} slots filled ──────────────────────────┘\n");
         }
 
         private static void PrintHelp()

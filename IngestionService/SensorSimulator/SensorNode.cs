@@ -17,15 +17,23 @@ namespace SensorSimulator
         private readonly HttpClient _http;
         private readonly Random _rng = new();
         private long _messageCounter = 0;
+
         private bool _isBlocked = false;
         private DateTime _blockedUntil = DateTime.MinValue;
+
+        private volatile bool _hasActiveSlot = true;
 
         private readonly int _intervalMinMs;
         private readonly int _intervalMaxMs;
 
         public string Id => _config.Id;
         public DataQuality Quality => _config.Quality;
-        public bool IsActive => !_isBlocked || DateTime.Now >= _blockedUntil;
+
+        public bool IsBlockExpired => !_isBlocked || DateTime.UtcNow >= _blockedUntil;
+
+        public bool HasActiveSlot => _hasActiveSlot;
+
+        public bool IsActive => _hasActiveSlot && IsBlockExpired;
 
         public SensorNode(
             SensorConfig config,
@@ -49,15 +57,16 @@ namespace SensorSimulator
         {
             while (!ct.IsCancellationRequested)
             {
-                if (_isBlocked && DateTime.Now < _blockedUntil)
+                if (!IsActive)
                 {
                     await Task.Delay(500, ct);
                     continue;
                 }
-                _isBlocked = false;
 
                 int intervalMs = _rng.Next(_intervalMinMs, _intervalMaxMs);
                 await Task.Delay(intervalMs, ct);
+
+                if (!IsActive) continue;
 
                 var reading = GenerateReading();
                 int alarmPriority = EvaluateAlarm(reading.Temperature);
@@ -72,10 +81,24 @@ namespace SensorSimulator
         public void BlockTemporarily()
         {
             _isBlocked = true;
-            _blockedUntil = DateTime.Now.AddSeconds(30);
+            _blockedUntil = DateTime.UtcNow.AddSeconds(30);
             ConsoleLog("BLOCKED for 30 seconds (fault-tolerance test)", ConsoleColor.Magenta);
         }
 
+        public void AssignSlot()
+        {
+            if (!_hasActiveSlot)
+                ConsoleLog("Slot ASSIGNED — resuming measurements.", ConsoleColor.Green);
+            _hasActiveSlot = true;
+        }
+
+
+        public void ReleaseSlot()
+        {
+            if (_hasActiveSlot)
+                ConsoleLog("Slot RELEASED — standing by in reserve.", ConsoleColor.DarkGray);
+            _hasActiveSlot = false;
+        }
 
         private SensorReading GenerateReading()
         {
@@ -85,7 +108,7 @@ namespace SensorSimulator
             {
                 SensorId = _config.Id,
                 Temperature = Math.Round(temp, 2),
-                Timestamp = DateTime.Now,
+                Timestamp = DateTime.UtcNow,
                 Quality = _config.Quality,
                 MessageId = Interlocked.Increment(ref _messageCounter)
             };
@@ -112,7 +135,7 @@ namespace SensorSimulator
             var color = alarmPriority switch
             {
                 1 => ConsoleColor.Yellow,
-                2 => ConsoleColor.DarkYellow, 
+                2 => ConsoleColor.DarkYellow,
                 3 => ConsoleColor.Red,
                 _ => ConsoleColor.White
             };
@@ -138,7 +161,8 @@ namespace SensorSimulator
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    ConsoleLog($"Server returned {(int)response.StatusCode}", ConsoleColor.DarkRed);
+                    string body = await response.Content.ReadAsStringAsync(ct);
+                    ConsoleLog($"Server returned {(int)response.StatusCode}: {body}", ConsoleColor.DarkRed);
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
