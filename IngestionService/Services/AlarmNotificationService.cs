@@ -12,8 +12,7 @@ namespace IngestionService.Services
             ILogger<AlarmNotificationService> logger)
         {
             _logger = logger;
-            string notificationUrl = "https://localhost:7241";
-            _notificationClient = new HttpClient { BaseAddress = new Uri(notificationUrl) };
+            string notificationUrl = config.GetValue<string>("Services:NotificationService") ?? "https://localhost:7241";            _notificationClient = new HttpClient { BaseAddress = new Uri(notificationUrl) };
         }
 
 

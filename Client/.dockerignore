@@ -4,5 +4,3 @@ obj/
 *.user
 .git/
 .gitignore
-Client/
-*.sln
