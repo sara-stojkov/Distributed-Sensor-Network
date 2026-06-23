@@ -1,15 +1,19 @@
-using System;
-using System.Xml.Serialization;
 using ConsensusService;
 using ConsensusService.Data;
+using ConsensusService.Services;
 using Microsoft.EntityFrameworkCore;
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-var host = builder.Build();       
-host.Run();
+builder.Services.AddSingleton<BftConsensusCalculator>();
+builder.Services.AddHostedService<Worker>();
+builder.Services.AddControllers();
 
+var app = builder.Build();
+
+app.MapControllers();
+
+app.Run();
