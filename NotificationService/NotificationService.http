@@ -1,0 +1,18 @@
+@NotificationService_HostAddress = https://localhost:7241
+
+GET {{NotificationService_HostAddress}}/health
+Accept: application/json
+
+###
+
+POST {{NotificationService_HostAddress}}/api/Alarms
+Content-Type: application/json
+
+{
+  "sensorId": "S1",
+  "value": 87.5,
+  "priority": 3,
+  "timestamp": "2026-06-16T12:00:00Z"
+}
+
+###
