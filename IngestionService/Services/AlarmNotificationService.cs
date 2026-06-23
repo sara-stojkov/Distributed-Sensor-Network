@@ -12,8 +12,7 @@ namespace IngestionService.Services
             ILogger<AlarmNotificationService> logger)
         {
             _logger = logger;
-            string notificationUrl = config["Services:NotificationService"]
-                ?? "http://notification-service:5052";
+            string notificationUrl = "https://localhost:7241";
             _notificationClient = new HttpClient { BaseAddress = new Uri(notificationUrl) };
         }
 
@@ -38,7 +37,7 @@ namespace IngestionService.Services
                     System.Text.Encoding.UTF8,
                     "application/json");
 
-                await _notificationClient.PostAsync("/api/notifications/alarm", content);
+                await _notificationClient.PostAsync("/api/Alarms", content);
             }
             catch (Exception ex)
             {
