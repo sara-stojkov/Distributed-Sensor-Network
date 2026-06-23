@@ -8,6 +8,13 @@
         public DataQuality Quality { get; set; }
         public int AlarmPriority { get; set; }
         public long MessageId { get; set; }
+
+        public double MinRange { get; set; }
+        public double MaxRange { get; set; }
+
+        public double AlarmThreshold1 { get; set; }
+        public double AlarmThreshold2 { get; set; }
+        public double AlarmThreshold3 { get; set; }
     }
 
     public class SecureMessage

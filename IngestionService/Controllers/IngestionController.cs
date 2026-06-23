@@ -13,17 +13,20 @@ namespace IngestionService.Controllers
         private readonly SensorRegistryService _registry;
         private readonly AlarmNotificationService _alarms;
         private readonly ReplayProtectionService _replay;
+        private readonly ReadingPersistenceService _persistence;
 
         public IngestionController(
             RSA serverRsa,
             SensorRegistryService registry,
             AlarmNotificationService alarms,
-            ReplayProtectionService replay)
+            ReplayProtectionService replay,
+            ReadingPersistenceService persistence)
         {
             _serverRsa = serverRsa;
             _registry = registry;
             _alarms = alarms;
             _replay = replay;
+            _persistence = persistence;
         }
 
 
@@ -54,7 +57,7 @@ namespace IngestionService.Controllers
             if (reading.AlarmPriority > 0)
                 await _alarms.NotifyAlarmAsync(reading);
 
-            await _registry.StoreReadingAsync(reading);
+            await _persistence.PersistAsync(reading);
 
             return Ok(new { received = reading.SensorId, timestamp = reading.Timestamp });
         }

@@ -1,6 +1,8 @@
 ﻿using AspNetCoreRateLimit;
+using IngestionService.Data;
 using IngestionService.RateLimiting;
 using IngestionService.Services;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,12 +30,17 @@ else
 
 string serverPublicKeyPem = await File.ReadAllTextAsync(publicKeyPath);
 
+var connectionString = builder.Configuration.GetConnectionString("Default");
+builder.Services.AddDbContextFactory<IngestionDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
 builder.Services.AddControllers();
 builder.Services.AddSingleton(serverRsa);
 builder.Services.AddSingleton(new ServerKeyProvider(serverPublicKeyPem));
 builder.Services.AddSingleton<SensorRegistryService>();
 builder.Services.AddSingleton<AlarmNotificationService>();
 builder.Services.AddSingleton<ReplayProtectionService>();
+builder.Services.AddScoped<ReadingPersistenceService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
