@@ -110,8 +110,15 @@ namespace SensorSimulator
                 Temperature = Math.Round(temp, 2),
                 Timestamp = DateTime.UtcNow,
                 Quality = _config.Quality,
-                MessageId = Interlocked.Increment(ref _messageCounter)
-            };
+                MessageId = Interlocked.Increment(ref _messageCounter),
+
+                MinRange = _config.TempMin,
+                MaxRange = _config.TempMax,
+                AlarmThreshold1 = _config.Thresholds.Priority1High,
+                AlarmThreshold2 = _config.Thresholds.Priority2High,
+                AlarmThreshold3 = _config.Thresholds.Priority3High
+
+            }; 
         }
 
         private int EvaluateAlarm(double temp)
