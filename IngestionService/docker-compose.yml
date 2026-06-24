@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  postgres-spring:
+    image: postgres:15
+    container_name: postgres-snus
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: snus
+    ports:
+      - "5433:5432"
+    restart: unless-stopped

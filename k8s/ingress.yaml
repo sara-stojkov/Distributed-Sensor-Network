@@ -1,0 +1,55 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # ↑ potrebno za SignalR WebSocket konekcije da ne timeoutuju
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # ── NotificationService ──────────────────────────
+          - path: /api/Alarms
+            pathType: Prefix
+            backend:
+              service:
+                name: notificationservice    
+                port:
+                  number: 8080
+
+          - path: /hubs/alarms
+            pathType: Prefix
+            backend:
+              service:
+                name: notificationservice      
+                port:
+                  number: 8080
+
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: notificationservice
+                port:
+                  number: 8080
+
+          # ── IngestionService ────────────────────────
+          - path: /api/ingest
+            pathType: Prefix
+            backend:
+              service:
+                name: ingestionservice         
+                port:
+                  number: 5050               
+
+          # ── ConsensusService ────────────────────────
+          - path: /api/reports
+            pathType: Prefix
+            backend:
+              service:
+                name: consensusservice        
+                port:
+                  number: 5002                 
