@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consensusservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consensusservice
+  template:
+    metadata:
+      labels:
+        app: consensusservice
+    spec:
+      containers:
+        - name: consensusservice
+          image: consensusservice:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5002
+          env:
+            - name: ConnectionStrings__Default
+              value: "Host=postgres;Port=5432;Database=snus;Username=postgres;Password=postgres"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consensusservice
+spec:
+  selector:
+    app: consensusservice
+  ports:
+    - port: 5002
+      targetPort: 5002
+  type: ClusterIP

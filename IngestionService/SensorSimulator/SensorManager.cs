@@ -118,9 +118,32 @@ namespace SensorSimulator
             Console.ResetColor();
         }
 
+        private static bool HasInteractiveConsole()
+        {
+            try
+            {
+                _ = Console.KeyAvailable;
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
 
         private async Task InteractiveCommandLoopAsync()
         {
+            if (!HasInteractiveConsole())
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("[INFO] No interactive console detected (running in Kubernetes / redirected stdin).");
+                Console.WriteLine("[INFO] Simulator is running headlessly. Send SIGTERM to stop.");
+                Console.ResetColor();
+
+                await Task.Delay(Timeout.Infinite, _cts.Token).ContinueWith(_ => { });
+                return;
+            }
+
             PrintHelp();
 
             while (!_cts.IsCancellationRequested)

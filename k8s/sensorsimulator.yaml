@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensorsimulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sensorsimulator
+  template:
+    metadata:
+      labels:
+        app: sensorsimulator
+    spec:
+      containers:
+        - name: sensorsimulator
+          image: sensorsimulator:latest
+          imagePullPolicy: Never
+          stdin: true
+          tty: true
+          env:
+            - name: INGESTION_URL
+              value: "http://ingestionservice:5050"

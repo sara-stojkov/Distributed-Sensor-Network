@@ -11,12 +11,12 @@ spec:
   rules:
     - http:
         paths:
-          # ── NotificationService (TVOJ) ──────────────────────────
+          # ── NotificationService ──────────────────────────
           - path: /api/Alarms
             pathType: Prefix
             backend:
               service:
-                name: notificationservice      # ← ime Service-a iz notificationservice.yaml
+                name: notificationservice    
                 port:
                   number: 8080
 
@@ -24,7 +24,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: notificationservice      # ← isto
+                name: notificationservice      
                 port:
                   number: 8080
 
@@ -36,20 +36,20 @@ spec:
                 port:
                   number: 8080
 
-          # ── IngestionService (STUDENT A) ────────────────────────
+          # ── IngestionService ────────────────────────
           - path: /api/ingest
             pathType: Prefix
             backend:
               service:
-                name: ingestionservice         # ← kad Student A završi, ime njegovog Service-a ide ovde
+                name: ingestionservice         
                 port:
-                  number: 8080                 # ← i njegov port (verovatno 8080, ali potvrdi sa njim)
+                  number: 5050               
 
-          # ── ConsensusService (STUDENT B) ────────────────────────
+          # ── ConsensusService ────────────────────────
           - path: /api/reports
             pathType: Prefix
             backend:
               service:
-                name: consensusservice         # ← kad Student B završi, ime njegovog Service-a ide ovde
+                name: consensusservice        
                 port:
-                  number: 8080                 # ← i njegov port
+                  number: 5002                 

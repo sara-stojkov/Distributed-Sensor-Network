@@ -8,6 +8,12 @@ namespace IngestionService.Services
 
         public bool Accept(string sensorId, long messageId)
         {
+            if (messageId == 1)
+            {
+                _lastMessageIds[sensorId] = 1;
+                return true;
+            }
+
             return _lastMessageIds.AddOrUpdate(
                 sensorId,
                 addValueFactory: _ => messageId,
